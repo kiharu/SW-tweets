@@ -41,3 +41,24 @@ def getDic2(filePath1, filePath2)
 
   return list_db2
 end
+
+def getDicEmoji(filePath)
+  json_data = open(filePath) do |io|
+    JSON.load(io)
+  end
+  return json_data
+end
+
+def getDicIzon(filePath)
+  list_dic = Array.new
+  File.open(filePath, 'r') do |file|
+    file.each do |line|
+      str = line.split(",")
+      list_dic << {
+        word: str[0],
+        semantic_orientations: str[1].to_i
+      }
+    end
+  end
+  return list_dic
+end

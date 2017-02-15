@@ -10,7 +10,7 @@ yml = YAML.load_file("./config.yml")
 end
 
 # リストのメンバーを取得する
-def getMembers(userName, listName)
+def getMembersFromAPI(userName, listName)
   # ユーザが作成したリスト
   @client.owned_lists(userName, {count: 10}).each do |list|
     if list.name == listName then
@@ -21,6 +21,16 @@ def getMembers(userName, listName)
   members = Array.new
   @client.list_members(@sw_list_id, count: 1000).each do |user|
     members.push user.screen_name
+  end
+  return members
+end
+
+def getMembersFromFile(filePath)
+  members = Array.new
+  File.open(filePath, 'r') do |file|
+    file.each do |line|
+      members << line
+    end
   end
   return members
 end
