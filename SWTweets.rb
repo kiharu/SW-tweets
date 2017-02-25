@@ -2,6 +2,7 @@ require 'twitter'
 require 'natto'
 require 'sqlite3'
 require 'yaml'
+require 'cgi'
 
 require './lib/changeMoji.rb'
 require './lib/getDictionary.rb'
@@ -42,15 +43,15 @@ list_db3 = getDicEmoji('./dic/emoji_ios6.json')
 list_db4 = getDicIzon('./dic/izon.csv')
 
 # 取得したいツイッターID
-members = getMembersFromFile('./twitterAcount.txt')
-
+members = getMembersFromFile('./twitterAccount.txt')
 
 # 結果を保存するDB(sqlite3を使用)
 db = SQLite3::Database.new 'test.db'
 db.busy_timeout = 1000
+# db.results_as_hash = true
 
 def initForDB(db)
-  db.execute('DROP TABLE feel;')
+  db.execute('DROP TABLE IF EXISTS feel;')
 
   # create table
   sql = <<-SQL
@@ -68,20 +69,15 @@ def initForDB(db)
   db.execute(sql)
 end
 
-# db.results_as_hash = true
-db_tweet = db.execute("select * from feel")
-
-if db_tweet.size.zero? or runType then
-
+if runType then
   if runType == 'clean'
     initForDB(db)
     puts runType
   end
 
   members.each_with_index do |member, i|
-    
-    # twitterのAPI制限を回避するために5人ずつ15分のインターバルを置く
-    if i > 0 and i%5 == 0 then
+    twitterのAPI制限を回避するために5人ずつ15分のインターバルを置く
+    if i > 0 and i % 5 == 0 then
       sleep 900
     end
 
@@ -98,29 +94,25 @@ if db_tweet.size.zero? or runType then
       h = {
         screen_name: tweet_obj.user.screen_name,
         date: tweet_obj.created_at.to_s,
-        tweet: tweet_obj.text,
+        tweet: CGI.unescapeHTML(tweet_obj.text),
         dic: dicType
       }
       db.execute("insert into feel (name, date, tweet, dic) values (:screen_name, :date, :tweet, :dic)", h)
       puts tweet_obj.text
-
     end
   end
-end
 
-if runType == 'clean' or runType == "add" then
   exit
 end
 
 list_tweets = Array.new
-db_tweet = db.execute("select * from feel")
-db_tweet.each { |id, name, twdate, avg, tweet, dic|
+db_tweet = db.execute("SELECT * FROM feel WHERE avg IS NULL")
+db_tweet.each { |id, name, twdate, avg, tweet|
   h = {
     id: id,
     screen_name: name,
     date: twdate,
     tweet: tweet,
-    dic: dic
   }
   list_tweets << h
 }
